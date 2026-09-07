@@ -4,23 +4,23 @@ import { Suspense, lazy } from "react";
 import { pageMeta } from "@/components/common/SEOHead";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 
-const Home = lazy(() => import("@/pages/Home"));
+const MockData = lazy(() => import("@/pages/MockData"));
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/mock-data")({
   head: () => ({
     meta: pageMeta({
-      title: "SmartOpenTools — Free, Open Developer Utilities",
+      title: "Free AI Mock Data Generator — SmartOpenTools",
       description:
-        "Instant access to developer tools with zero signup. Format, generate, and convert data directly in your browser.",
+        "Generate realistic SQL, JSON, and CSV mock data using natural language prompts without complex manual schemas.",
     }),
   }),
-  component: HomeRoute,
+  component: MockDataRoute,
 });
 
-function HomeRoute() {
+function MockDataRoute() {
   return (
     <Suspense fallback={<PageSkeleton />}>
-      <Home />
+      <MockData />
     </Suspense>
   );
 }
