@@ -1,6 +1,5 @@
 import { Link, Outlet } from "@tanstack/react-router";
 
-import { AdSlot } from "@/components/common/AdSlot";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { SearchProvider } from "@/lib/search-context";
@@ -34,9 +33,6 @@ export function AppLayout() {
         <div className="flex">
           <Sidebar />
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="border-b border-border px-4 py-3 sm:px-6">
-              <AdSlot width={728} height={90} mobileHeight={50} />
-            </div>
             <main className="min-w-0 flex-1 px-4 py-8 sm:px-6">
               <Outlet />
             </main>
