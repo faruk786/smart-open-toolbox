@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState } from "react";
 
-import { AdSlot } from "@/components/common/AdSlot";
 import { toolTree } from "@/lib/tools";
 import { cn } from "@/lib/utils";
 
@@ -71,11 +70,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {!collapsed && (
-        <div className="border-t border-border p-3">
-          <AdSlot width={300} height={250} />
-        </div>
-      )}
     </aside>
   );
 }
