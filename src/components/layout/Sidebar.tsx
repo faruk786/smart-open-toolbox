@@ -56,7 +56,9 @@ export function Sidebar() {
                     key={tool.name}
                     className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground/70"
                   >
-                    <span className="truncate">{collapsed ? tool.name.slice(0, 2) : tool.name}</span>
+                    <span className="truncate">
+                      {collapsed ? tool.name.slice(0, 2) : tool.name}
+                    </span>
                     {!collapsed && (
                       <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
                         Soon
@@ -69,7 +71,6 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
-
     </aside>
   );
 }

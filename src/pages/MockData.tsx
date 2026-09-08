@@ -33,23 +33,53 @@ type Category = "users" | "orders" | "subscriptions";
 type OutputFormat = "table" | "json" | "sql" | "csv";
 
 const firstNames = [
-  "Aarav", "Vivaan", "Aditya", "Sai", "Rohan", "Priya", "Ananya", "Neha", "Kavya", "Rahul",
+  "Aarav",
+  "Vivaan",
+  "Aditya",
+  "Sai",
+  "Rohan",
+  "Priya",
+  "Ananya",
+  "Neha",
+  "Kavya",
+  "Rahul",
 ];
 const lastNames = [
-  "Sharma", "Reddy", "Nair", "Iyer", "Gupta", "Patel", "Kumar", "Verma", "Mehta", "Joshi",
+  "Sharma",
+  "Reddy",
+  "Nair",
+  "Iyer",
+  "Gupta",
+  "Patel",
+  "Kumar",
+  "Verma",
+  "Mehta",
+  "Joshi",
 ];
 const domains = ["gmail", "yahoo", "outlook", "company"];
 const departments = ["Engineering", "Sales", "Marketing", "HR", "Finance", "Operations"];
 const cities = ["Hyderabad", "Bangalore", "Mumbai", "Delhi", "Chennai", "Pune", "Kolkata"];
 const roads = ["MG Road", "Ring Road", "Main Street", "Highway Road", "Park Avenue", "Lake View"];
 const products = [
-  "Wireless Mouse", "Mechanical Keyboard", "USB-C Hub", "Webcam 1080p", "Noise Cancelling Headphones",
-  "Portable SSD", "Smart Watch", "Laptop Stand",
+  "Wireless Mouse",
+  "Mechanical Keyboard",
+  "USB-C Hub",
+  "Webcam 1080p",
+  "Noise Cancelling Headphones",
+  "Portable SSD",
+  "Smart Watch",
+  "Laptop Stand",
 ];
 const statuses = ["Pending", "Shipped", "Delivered", "Cancelled", "Returned"];
 const companies = [
-  "Acme Corp", "TechFlow", "DataPulse", "CloudNine", "ByteWorks", "NexGen Systems",
-  "Streamline", "QuantumSoft",
+  "Acme Corp",
+  "TechFlow",
+  "DataPulse",
+  "CloudNine",
+  "ByteWorks",
+  "NexGen Systems",
+  "Streamline",
+  "QuantumSoft",
 ];
 const plans = ["Starter", "Growth", "Pro", "Enterprise"];
 
@@ -109,7 +139,8 @@ function generateRows(category: Category, count: number) {
 function detectCategory(prompt: string): Category {
   const p = prompt.toLowerCase();
   if (p.includes("order") || p.includes("e-commerce") || p.includes("product")) return "orders";
-  if (p.includes("subscription") || p.includes("saas") || p.includes("plan")) return "subscriptions";
+  if (p.includes("subscription") || p.includes("saas") || p.includes("plan"))
+    return "subscriptions";
   return "users";
 }
 
@@ -131,7 +162,11 @@ function formatContent(format: OutputFormat, rows: Record<string, string | numbe
       return rows
         .map((row) => {
           const cols = keys.join(", ");
-          const vals = keys.map((k) => (typeof row[k] === "number" ? row[k] : `'${String(row[k]).replace(/'/g, "''")}'`)).join(", ");
+          const vals = keys
+            .map((k) =>
+              typeof row[k] === "number" ? row[k] : `'${String(row[k]).replace(/'/g, "''")}'`,
+            )
+            .join(", ");
           return `INSERT INTO mock_data (${cols}) VALUES (${vals});`;
         })
         .join("\n");
@@ -148,7 +183,9 @@ export default function MockData() {
   const [prompt, setPrompt] = useState("");
   const [rowCount, setRowCount] = useState(10);
   const [format, setFormat] = useState<OutputFormat>("table");
-  const [rows, setRows] = useState<Record<string, string | number>[]>(() => generateRows("users", PREVIEW_LIMIT));
+  const [rows, setRows] = useState<Record<string, string | number>[]>(() =>
+    generateRows("users", PREVIEW_LIMIT),
+  );
   const [copied, setCopied] = useState(false);
 
   const activeCategory = useMemo(() => detectCategory(prompt), [prompt]);
@@ -231,9 +268,7 @@ export default function MockData() {
                 size="sm"
                 onClick={() => applyPreset(key)}
                 className={
-                  activeCategory === key && !prompt
-                    ? "bg-accent text-accent-foreground"
-                    : ""
+                  activeCategory === key && !prompt ? "bg-accent text-accent-foreground" : ""
                 }
               >
                 {key === "users" && "Indian User Profiles"}
@@ -274,7 +309,11 @@ export default function MockData() {
 
         {/* Output section */}
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
-          <Tabs value={format} onValueChange={(value) => setFormat(value as OutputFormat)} className="w-full">
+          <Tabs
+            value={format}
+            onValueChange={(value) => setFormat(value as OutputFormat)}
+            className="w-full"
+          >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <TabsList>
                 <TabsTrigger value="table">Table</TabsTrigger>
@@ -314,7 +353,10 @@ export default function MockData() {
                     <TableHeader className="sticky top-0 z-10 bg-muted">
                       <TableRow>
                         {columns.map((col) => (
-                          <TableHead key={col} className="font-mono text-xs uppercase tracking-wide">
+                          <TableHead
+                            key={col}
+                            className="font-mono text-xs uppercase tracking-wide"
+                          >
                             {col}
                           </TableHead>
                         ))}
