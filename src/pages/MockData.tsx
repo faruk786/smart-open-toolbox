@@ -177,7 +177,7 @@ function formatContent(format: OutputFormat, rows: Row[]) {
   }
 }
 
-const ROW_OPTIONS = [10, 25, 50, 100];
+const ROW_OPTIONS = [10, 15, 20, 25, 50, 100];
 const PREVIEW_LIMIT = 5;
 
 export default function MockData() {
