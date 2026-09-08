@@ -31,6 +31,7 @@ const PRESETS = {
 
 type Category = "users" | "orders" | "subscriptions";
 type OutputFormat = "table" | "json" | "sql" | "csv";
+type Row = Record<string, string | number>;
 
 const firstNames = [
   "Aarav",
@@ -87,7 +88,7 @@ function mod(a: number, b: number) {
   return ((a % b) + b) % b;
 }
 
-function buildUser(index: number) {
+function buildUser(index: number): Row {
   const name = `${firstNames[mod(index, firstNames.length)]} ${lastNames[mod(index * 3, lastNames.length)]}`;
   const city = cities[mod(index, cities.length)];
   return {
@@ -100,7 +101,7 @@ function buildUser(index: number) {
   };
 }
 
-function buildOrder(index: number) {
+function buildOrder(index: number): Row {
   const customer = `${firstNames[mod(index + 4, firstNames.length)]} ${lastNames[mod(index * 5 + 2, lastNames.length)]}`;
   return {
     "Order ID": `ORD-${1000 + index}`,
@@ -112,7 +113,7 @@ function buildOrder(index: number) {
   };
 }
 
-function buildSubscription(index: number) {
+function buildSubscription(index: number): Row {
   const monthsAhead = 1 + mod(index, 12);
   const renewal = new Date();
   renewal.setMonth(renewal.getMonth() + monthsAhead);
@@ -126,8 +127,8 @@ function buildSubscription(index: number) {
   };
 }
 
-function generateRows(category: Category, count: number) {
-  const rows = [];
+function generateRows(category: Category, count: number): Row[] {
+  const rows: Row[] = [];
   for (let i = 0; i < count; i++) {
     if (category === "orders") rows.push(buildOrder(i));
     else if (category === "subscriptions") rows.push(buildSubscription(i));
@@ -144,9 +145,9 @@ function detectCategory(prompt: string): Category {
   return "users";
 }
 
-function formatContent(format: OutputFormat, rows: Record<string, string | number>[]) {
+function formatContent(format: OutputFormat, rows: Row[]) {
   if (rows.length === 0) return "";
-  const keys = Object.keys(rows[0]);
+  const keys = Object.keys(rows[0]!);
 
   switch (format) {
     case "json":
@@ -183,15 +184,13 @@ export default function MockData() {
   const [prompt, setPrompt] = useState("");
   const [rowCount, setRowCount] = useState(10);
   const [format, setFormat] = useState<OutputFormat>("table");
-  const [rows, setRows] = useState<Record<string, string | number>[]>(() =>
-    generateRows("users", PREVIEW_LIMIT),
-  );
+  const [rows, setRows] = useState<Row[]>(() => generateRows("users", PREVIEW_LIMIT));
   const [copied, setCopied] = useState(false);
 
   const activeCategory = useMemo(() => detectCategory(prompt), [prompt]);
 
   const previewRows = useMemo(() => rows.slice(0, PREVIEW_LIMIT), [rows]);
-  const columns = useMemo(() => (rows.length > 0 ? Object.keys(rows[0]) : []), [rows]);
+  const columns = useMemo(() => (rows.length > 0 ? Object.keys(rows[0]!) : []), [rows]);
 
   const downloadableContent = useMemo(() => formatContent(format, rows), [format, rows]);
 
