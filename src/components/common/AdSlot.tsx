@@ -1,4 +1,13 @@
-import type { AdSlotProps } from "./AdSlot.types";
+type AdSlotProps = {
+  /** Reserved width in px (desktop). */
+  width: number;
+  /** Reserved height in px (desktop). */
+  height: number;
+  /** Reserved height in px on small screens; defaults to `height`. */
+  mobileHeight?: number;
+  label?: string;
+  className?: string;
+};
 
 /**
  * Ads are temporarily hidden while the workspace is being polished.

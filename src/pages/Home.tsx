@@ -26,8 +26,7 @@ export default function Home() {
     const q = query.trim().toLowerCase();
     if (!q) return featured;
     return featured.filter(
-      (tool) =>
-        tool.name.toLowerCase().includes(q) || tool.description.toLowerCase().includes(q),
+      (tool) => tool.name.toLowerCase().includes(q) || tool.description.toLowerCase().includes(q),
     );
   }, [query]);
 

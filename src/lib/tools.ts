@@ -18,8 +18,7 @@ export const toolTree: ToolCategory[] = [
     tools: [
       {
         name: "AI Mock Data",
-        description:
-          "Describe a schema in plain English and get SQL, JSON, or CSV rows instantly.",
+        description: "Describe a schema in plain English and get SQL, JSON, or CSV rows instantly.",
         path: "/mock-data",
         status: "live",
       },
