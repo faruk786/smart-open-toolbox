@@ -1,7 +1,24 @@
 import { useMemo, useState } from "react";
-import { Check, Copy, Download, Wand2 } from "lucide-react";
+import { Check, Copy, Download, KeyRound, Loader2, Wand2 } from "lucide-react";
 
+import { AdSlot } from "@/components/common/AdSlot";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -9,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -31,7 +49,8 @@ const PRESETS = {
 
 type Category = "users" | "orders" | "subscriptions";
 type OutputFormat = "table" | "json" | "sql" | "csv";
-type Row = Record<string, string | number>;
+type Cell = string | number;
+type Row = Record<string, Cell>;
 
 const firstNames = [
   "Aarav",
@@ -88,8 +107,8 @@ function mod(a: number, b: number) {
   return ((a % b) + b) % b;
 }
 
-function pick<T>(list: readonly T[], index: number): T {
-  return list[mod(index, list.length)] as T;
+function pick(list: readonly string[], index: number): string {
+  return list[mod(index, list.length)] ?? "";
 }
 
 function buildUser(index: number): Row {
@@ -119,9 +138,7 @@ function buildOrder(index: number): Row {
 
 function buildSubscription(index: number): Row {
   const monthsAhead = 1 + mod(index, 12);
-  const renewal = new Date();
-  renewal.setMonth(renewal.getMonth() + monthsAhead);
-  renewal.setDate(1 + mod(index, 28));
+  const renewal = new Date(2026, mod(index + monthsAhead, 12), 1 + mod(index, 28));
   return {
     Company: pick(companies, index),
     Plan: pick(plans, index),
@@ -130,7 +147,6 @@ function buildSubscription(index: number): Row {
     "Renewal Date": renewal.toISOString().slice(0, 10),
   };
 }
-
 
 function generateRows(category: Category, count: number): Row[] {
   const rows: Row[] = [];
@@ -150,9 +166,29 @@ function detectCategory(prompt: string): Category {
   return "users";
 }
 
+function normalizeRows(raw: unknown): Row[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item) => {
+    const row: Row = {};
+    if (item && typeof item === "object") {
+      for (const [key, value] of Object.entries(item as Record<string, unknown>)) {
+        row[key] =
+          typeof value === "number" || typeof value === "string"
+            ? value
+            : value === null || value === undefined
+              ? ""
+              : typeof value === "boolean"
+                ? String(value)
+                : JSON.stringify(value);
+      }
+    }
+    return row;
+  });
+}
+
 function formatContent(format: OutputFormat, rows: Row[]) {
   if (rows.length === 0) return "";
-  const keys = Object.keys(rows[0]!);
+  const keys = Object.keys(rows[0] ?? {});
 
   switch (format) {
     case "json":
@@ -160,17 +196,17 @@ function formatContent(format: OutputFormat, rows: Row[]) {
     case "csv": {
       const lines = [keys.join(",")];
       for (const row of rows) {
-        lines.push(keys.map((k) => String(row[k]).replace(/,/g, " ")).join(","));
+        lines.push(keys.map((k) => String(row[k] ?? "").replace(/,/g, " ")).join(","));
       }
       return lines.join("\n");
     }
     case "sql": {
       return rows
         .map((row) => {
-          const cols = keys.join(", ");
+          const cols = keys.map((k) => `"${k.replace(/"/g, "")}"`).join(", ");
           const vals = keys
             .map((k) =>
-              typeof row[k] === "number" ? row[k] : `'${String(row[k]).replace(/'/g, "''")}'`,
+              typeof row[k] === "number" ? row[k] : `'${String(row[k] ?? "").replace(/'/g, "''")}'`,
             )
             .join(", ");
           return `INSERT INTO mock_data (${cols}) VALUES (${vals});`;
@@ -184,6 +220,14 @@ function formatContent(format: OutputFormat, rows: Row[]) {
 
 const ROW_OPTIONS = [10, 15, 20, 25, 50, 100];
 const PREVIEW_LIMIT = 5;
+const API_KEY_STORAGE = "sot:gemini-api-key";
+
+const MSW_SNIPPET = `import { http, HttpResponse } from "msw";
+import users from "./mock-users.json";
+
+export const handlers = [
+  http.get("/api/users", () => HttpResponse.json(users)),
+];`;
 
 export default function MockData() {
   const [prompt, setPrompt] = useState("");
@@ -191,22 +235,75 @@ export default function MockData() {
   const [format, setFormat] = useState<OutputFormat>("table");
   const [rows, setRows] = useState<Row[]>(() => generateRows("users", PREVIEW_LIMIT));
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [keyDialogOpen, setKeyDialogOpen] = useState(false);
+  const [keyDraft, setKeyDraft] = useState("");
+  const [hasCustomKey, setHasCustomKey] = useState(false);
 
   const activeCategory = useMemo(() => detectCategory(prompt), [prompt]);
-
+  const columns = useMemo(() => Object.keys(rows[0] ?? {}), [rows]);
   const previewRows = useMemo(() => rows.slice(0, PREVIEW_LIMIT), [rows]);
-  const columns = useMemo(() => (rows.length > 0 ? Object.keys(rows[0]!) : []), [rows]);
-
   const downloadableContent = useMemo(() => formatContent(format, rows), [format, rows]);
 
-  function handleGenerate() {
-    setRows(generateRows(activeCategory, rowCount));
+  function readStoredKey() {
+    try {
+      return localStorage.getItem(API_KEY_STORAGE) ?? "";
+    } catch {
+      return "";
+    }
+  }
+
+  async function handleGenerate() {
+    const activePrompt = prompt.trim() || PRESETS[activeCategory];
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ prompt: activePrompt, rowCount, apiKey: readStoredKey() }),
+      });
+      const payload = (await response.json()) as { rows?: unknown; error?: string };
+      if (!response.ok) {
+        setError(payload.error ?? "Generation failed. Please try again.");
+        return;
+      }
+      const next = normalizeRows(payload.rows);
+      if (next.length === 0) {
+        setError("No rows came back. Try describing the data differently.");
+        return;
+      }
+      setRows(next);
+    } catch {
+      setError("Network error. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function applyPreset(category: Category) {
     setPrompt(PRESETS[category]);
     setRowCount(category === "orders" ? 25 : category === "subscriptions" ? 15 : 20);
     setRows(generateRows(category, PREVIEW_LIMIT));
+    setError(null);
+  }
+
+  function openKeyDialog() {
+    setKeyDraft(readStoredKey());
+    setKeyDialogOpen(true);
+  }
+
+  function saveKey() {
+    try {
+      const value = keyDraft.trim();
+      if (value) localStorage.setItem(API_KEY_STORAGE, value);
+      else localStorage.removeItem(API_KEY_STORAGE);
+      setHasCustomKey(Boolean(value));
+    } catch {
+      // storage unavailable — ignore
+    }
+    setKeyDialogOpen(false);
   }
 
   async function handleCopy() {
@@ -251,10 +348,44 @@ export default function MockData() {
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Input section */}
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="text-sm font-semibold text-foreground">Describe the data you need</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Use everyday language — columns, row count, and style are inferred from your prompt.
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Describe the data you need</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Use everyday language — columns, row count, and style are inferred from your prompt.
+              </p>
+            </div>
+            <Dialog open={keyDialogOpen} onOpenChange={setKeyDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2" onClick={openKeyDialog}>
+                  <KeyRound className="size-4" />
+                  {hasCustomKey ? "Key saved" : "Custom key"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Use your own API key</DialogTitle>
+                  <DialogDescription>
+                    Optional. Paste a Google Gemini API key to run generations on your own quota. It
+                    is stored only in this browser and never saved on our servers.
+                  </DialogDescription>
+                </DialogHeader>
+                <Input
+                  value={keyDraft}
+                  onChange={(e) => setKeyDraft(e.target.value)}
+                  placeholder="AIza..."
+                  type="password"
+                  className="font-mono text-sm"
+                />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setKeyDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={saveKey}>Save key</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
 
           <Textarea
             value={prompt}
@@ -304,11 +435,24 @@ export default function MockData() {
               </Select>
             </div>
 
-            <Button onClick={handleGenerate} className="ml-auto gap-2">
-              <Wand2 className="size-4" />
-              Generate Data
+            <Button onClick={handleGenerate} disabled={loading} className="ml-auto gap-2">
+              {loading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Wand2 className="size-4" />
+              )}
+              {loading ? "Generating…" : "Generate Data"}
             </Button>
           </div>
+
+          {error && (
+            <p
+              role="alert"
+              className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+            >
+              {error}
+            </p>
+          )}
         </section>
 
         {/* Output section */}
@@ -331,7 +475,7 @@ export default function MockData() {
                   variant="outline"
                   size="sm"
                   onClick={handleCopy}
-                  disabled={rows.length === 0}
+                  disabled={rows.length === 0 || loading}
                   className="gap-2"
                 >
                   {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
@@ -341,7 +485,7 @@ export default function MockData() {
                   variant="outline"
                   size="sm"
                   onClick={handleDownload}
-                  disabled={rows.length === 0}
+                  disabled={rows.length === 0 || loading}
                   className="gap-2"
                 >
                   <Download className="size-4" />
@@ -350,99 +494,245 @@ export default function MockData() {
               </div>
             </div>
 
-            <TabsContent value="table" className="mt-4">
-              <div className="overflow-hidden rounded-lg border border-border">
-                <div className="max-h-[360px] overflow-auto">
-                  <Table>
-                    <TableHeader className="sticky top-0 z-10 bg-muted">
-                      <TableRow>
-                        {columns.map((col) => (
-                          <TableHead
-                            key={col}
-                            className="font-mono text-xs uppercase tracking-wide"
-                          >
-                            {col}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {previewRows.map((row, idx) => (
-                        <TableRow key={idx}>
-                          {columns.map((col) => (
-                            <TableCell key={col} className="font-mono text-xs">
-                              {String(row[col])}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                {rows.length > PREVIEW_LIMIT && (
-                  <p className="border-t border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-                    Showing {PREVIEW_LIMIT} of {rows.length} generated rows.
-                  </p>
-                )}
+            {loading ? (
+              <div className="mt-4 space-y-2 rounded-lg border border-border p-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-6 w-full" />
+                ))}
               </div>
-            </TabsContent>
+            ) : (
+              <>
+                <TabsContent value="table" className="mt-4">
+                  <div className="overflow-hidden rounded-lg border border-border">
+                    <div className="max-h-[360px] overflow-auto">
+                      <Table>
+                        <TableHeader className="sticky top-0 z-10 bg-muted">
+                          <TableRow>
+                            {columns.map((col) => (
+                              <TableHead
+                                key={col}
+                                className="font-mono text-xs uppercase tracking-wide"
+                              >
+                                {col}
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {previewRows.map((row, idx) => (
+                            <TableRow key={idx}>
+                              {columns.map((col) => (
+                                <TableCell key={col} className="font-mono text-xs">
+                                  {String(row[col] ?? "")}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {rows.length > PREVIEW_LIMIT && (
+                      <p className="border-t border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                        Showing {PREVIEW_LIMIT} of {rows.length} generated rows. Copy or download to
+                        get the full set.
+                      </p>
+                    )}
+                  </div>
+                </TabsContent>
 
-            <TabsContent value="json" className="mt-4">
-              <pre className="max-h-[360px] overflow-auto rounded-lg border border-border bg-muted/50 p-4 font-mono text-xs">
-                {downloadableContent}
-              </pre>
-            </TabsContent>
-
-            <TabsContent value="sql" className="mt-4">
-              <pre className="max-h-[360px] overflow-auto rounded-lg border border-border bg-muted/50 p-4 font-mono text-xs">
-                {downloadableContent}
-              </pre>
-            </TabsContent>
-
-            <TabsContent value="csv" className="mt-4">
-              <pre className="max-h-[360px] overflow-auto rounded-lg border border-border bg-muted/50 p-4 font-mono text-xs">
-                {downloadableContent}
-              </pre>
-            </TabsContent>
+                {(["json", "sql", "csv"] as const).map((tab) => (
+                  <TabsContent key={tab} value={tab} className="mt-4">
+                    <pre className="max-h-[360px] overflow-auto rounded-lg border border-border bg-muted/50 p-4 font-mono text-xs">
+                      {downloadableContent}
+                    </pre>
+                  </TabsContent>
+                ))}
+              </>
+            )}
           </Tabs>
         </section>
       </div>
 
-      {/* How-to guide */}
-      <section className="mt-10 rounded-xl border border-border bg-muted/30 p-6">
-        <h2 className="text-base font-semibold text-foreground">How to use this tool</h2>
-        <ol className="mt-4 grid gap-4 sm:grid-cols-3">
-          <li className="rounded-lg border border-border bg-card p-4">
-            <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-              1
-            </span>
-            <h3 className="mt-3 text-sm font-semibold text-foreground">Describe your data</h3>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Type what you need in plain English — columns, row count, and style. Or pick a preset
-              to get started instantly.
-            </p>
-          </li>
-          <li className="rounded-lg border border-border bg-card p-4">
-            <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-              2
-            </span>
-            <h3 className="mt-3 text-sm font-semibold text-foreground">Choose format & size</h3>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Select how many rows you want and switch between Table, JSON, SQL, or CSV outputs.
-            </p>
-          </li>
-          <li className="rounded-lg border border-border bg-card p-4">
-            <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-              3
-            </span>
-            <h3 className="mt-3 text-sm font-semibold text-foreground">Generate & export</h3>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Hit Generate Data, then copy the result to your clipboard or download it for your
-              project.
-            </p>
-          </li>
-        </ol>
-      </section>
+      <AdSlot width={728} height={90} mobileHeight={50} label="Advertisement" className="my-10" />
+
+      {/* Documentation */}
+      <article className="mt-10 space-y-8">
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Why synthetic mock data matters in modern engineering
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Cloning a production database into a development environment is still the most common
+            way teams get realistic test data — and the riskiest. A single restored dump can carry
+            names, emails, payment references, and health records into laptops, CI runners, and
+            screenshots. Under GDPR that is a processing activity with no lawful basis, and under
+            HIPAA it is an unmanaged disclosure of protected health information. Even with masking
+            scripts, one missed column or free-text notes field is enough to leak PII.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Synthetic data removes the risk at the source: nothing generated here maps back to a
+            real person, so it can be committed to fixtures, shared with contractors, and pasted
+            into bug reports freely.
+          </p>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+            <li className="rounded-lg border border-border bg-muted/30 p-4">
+              <h3 className="text-sm font-semibold text-foreground">Local migration seeds</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Fill freshly migrated tables with hundreds of plausible rows so indexes, constraints,
+                and joins are exercised before staging.
+              </p>
+            </li>
+            <li className="rounded-lg border border-border bg-muted/30 p-4">
+              <h3 className="text-sm font-semibold text-foreground">Frontend stress tests</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Render 100-row tables and long-string cells to catch virtualization bugs, overflow,
+                and layout shifts that ten hand-written rows never reveal.
+              </p>
+            </li>
+            <li className="rounded-lg border border-border bg-muted/30 p-4">
+              <h3 className="text-sm font-semibold text-foreground">Edge-case unit tests</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Ask for empty fields, unicode names, zero quantities, or expired dates to build
+                fixtures around the cases that break parsers.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Format guide: JSON, SQL, and CSV
+          </h2>
+
+          <div className="mt-5 space-y-6">
+            <div>
+              <h3 className="font-mono text-sm font-semibold text-foreground">JSON</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                The default for mocking REST and GraphQL endpoints, priming client-side stores
+                (Redux, Zustand, TanStack Query caches), and driving Mock Service Worker handlers.
+                Save the output as a fixture file and serve it straight from a handler:
+              </p>
+              <pre className="mt-3 overflow-auto rounded-lg border border-border bg-muted/50 p-4 font-mono text-xs leading-relaxed">
+                {MSW_SNIPPET}
+              </pre>
+            </div>
+
+            <div>
+              <h3 className="font-mono text-sm font-semibold text-foreground">SQL</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Output is emitted as one <code className="font-mono">INSERT INTO</code> statement per
+                row, which is the safest form to paste into a migration or psql session. To seed
+                faster, wrap the batch in a single transaction. Dialect notes: PostgreSQL prefers
+                double-quoted identifiers and supports{" "}
+                <code className="font-mono">RETURNING</code>; MySQL uses backticks and{" "}
+                <code className="font-mono">INSERT IGNORE</code>. When tables have foreign keys,
+                insert parents first, or generate the child rows with IDs you already know exist —
+                never disable constraint checks on a shared staging database.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-mono text-sm font-semibold text-foreground">CSV</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Best for data pipelines and analytics: load it with{" "}
+                <code className="font-mono">COPY … FROM</code> in Postgres, read it in Python with{" "}
+                <code className="font-mono">pandas.read_csv()</code>, feed it into a warehouse
+                staging bucket, or drop it into a spreadsheet to populate client-facing reporting
+                templates.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Writing effective data prompts
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            The generator follows your wording closely. Name the columns, the locale, and the ranges
+            you expect.
+          </p>
+          <ol className="mt-4 space-y-3">
+            <li className="rounded-lg border border-border bg-muted/30 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Localized names
+              </p>
+              <p className="mt-2 font-mono text-xs leading-relaxed text-foreground">
+                30 South Indian employee records with full_name, official_email on the
+                acme.co domain, and a Hyderabad postal address including a 6-digit pincode.
+              </p>
+            </li>
+            <li className="rounded-lg border border-border bg-muted/30 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Realistic numeric ranges
+              </p>
+              <p className="mt-2 font-mono text-xs leading-relaxed text-foreground">
+                50 payroll rows with department, annual_salary between 600000 and 2800000 INR as
+                integers, and bonus_percent between 0 and 15 with one decimal.
+              </p>
+            </li>
+            <li className="rounded-lg border border-border bg-muted/30 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Valid ISO dates
+              </p>
+              <p className="mt-2 font-mono text-xs leading-relaxed text-foreground">
+                25 subscription records with created_at as ISO 8601 timestamps in 2025 and
+                renewal_date as YYYY-MM-DD strictly after created_at.
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Frequently asked questions
+          </h2>
+          <Accordion type="single" collapsible className="mt-3">
+            <AccordionItem value="q1">
+              <AccordionTrigger className="text-sm">
+                Is the generated data stored or logged anywhere?
+              </AccordionTrigger>
+              <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                No. SmartOpenTools processes each request in memory and returns the result without
+                persistence — there is no database of prompts or datasets. Every query is stateless,
+                and a custom API key you add stays in your own browser storage.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="q2">
+              <AccordionTrigger className="text-sm">
+                Can I export datasets larger than 100 rows?
+              </AccordionTrigger>
+              <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                The row selector stops at 100 because a single model response has a token ceiling
+                and latency climbs sharply past that point — large requests are also more likely to
+                return truncated JSON. For bigger sets, batch: generate 100 rows at a time, vary the
+                prompt slightly (different cities, date ranges, or ID offsets), and concatenate the
+                files before seeding.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="q3">
+              <AccordionTrigger className="text-sm">
+                What database engines are compatible with the SQL output?
+              </AccordionTrigger>
+              <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                The statements use standard ANSI SQL, so they run on PostgreSQL, MySQL, SQLite, and
+                MariaDB. Rename the target table and adjust identifier quoting if your dialect
+                requires backticks.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="q4">
+              <AccordionTrigger className="text-sm">
+                Is this tool free for commercial use?
+              </AccordionTrigger>
+              <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                Yes — 100% free under MIT-style open tooling terms. Individual developers, teams,
+                and agencies can use the generated datasets in commercial projects with no signup
+                and no attribution requirement.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </section>
+      </article>
     </div>
   );
 }
