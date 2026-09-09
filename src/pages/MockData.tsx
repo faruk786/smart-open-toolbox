@@ -88,28 +88,32 @@ function mod(a: number, b: number) {
   return ((a % b) + b) % b;
 }
 
+function pick<T>(list: readonly T[], index: number): T {
+  return list[mod(index, list.length)] as T;
+}
+
 function buildUser(index: number): Row {
-  const name = `${firstNames[mod(index, firstNames.length)]} ${lastNames[mod(index * 3, lastNames.length)]}`;
-  const city = cities[mod(index, cities.length)];
+  const name = `${pick(firstNames, index)} ${pick(lastNames, index * 3)}`;
+  const city = pick(cities, index);
   return {
     id: index + 1,
     name,
-    email: `${name.toLowerCase().replace(/\s+/g, ".")}${mod(index * 7, 999)}@${domains[mod(index, domains.length)]}.com`,
-    department: departments[mod(index, departments.length)],
+    email: `${name.toLowerCase().replace(/\s+/g, ".")}${mod(index * 7, 999)}@${pick(domains, index)}.com`,
+    department: pick(departments, index),
     salary: `₹${(45000 + mod(index * 17321, 205000)).toLocaleString()}`,
-    address: `${mod(index * 13, 999) + 1} ${roads[mod(index, roads.length)]}, ${city}`,
+    address: `${mod(index * 13, 999) + 1} ${pick(roads, index)}, ${city}`,
   };
 }
 
 function buildOrder(index: number): Row {
-  const customer = `${firstNames[mod(index + 4, firstNames.length)]} ${lastNames[mod(index * 5 + 2, lastNames.length)]}`;
+  const customer = `${pick(firstNames, index + 4)} ${pick(lastNames, index * 5 + 2)}`;
   return {
     "Order ID": `ORD-${1000 + index}`,
     Customer: customer,
-    Product: products[mod(index, products.length)],
+    Product: pick(products, index),
     Quantity: 1 + mod(index, 5),
     Price: `₹${(499 + mod(index * 3129, 24501)).toLocaleString()}`,
-    Status: statuses[mod(index, statuses.length)],
+    Status: pick(statuses, index),
   };
 }
 
@@ -119,13 +123,14 @@ function buildSubscription(index: number): Row {
   renewal.setMonth(renewal.getMonth() + monthsAhead);
   renewal.setDate(1 + mod(index, 28));
   return {
-    Company: companies[mod(index, companies.length)],
-    Plan: plans[mod(index, plans.length)],
+    Company: pick(companies, index),
+    Plan: pick(plans, index),
     Seats: 1 + mod(index * 3, 50),
     Amount: `$${49 + mod(index * 97, 950)}`,
-    "Renewal Date": renewal.toISOString().split("T")[0],
+    "Renewal Date": renewal.toISOString().slice(0, 10),
   };
 }
+
 
 function generateRows(category: Category, count: number): Row[] {
   const rows: Row[] = [];
