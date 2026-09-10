@@ -436,11 +436,7 @@ export default function MockData() {
             </div>
 
             <Button onClick={handleGenerate} disabled={loading} className="ml-auto gap-2">
-              {loading ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Wand2 className="size-4" />
-              )}
+              {loading ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
               {loading ? "Generating…" : "Generate Data"}
             </Button>
           </div>
@@ -578,8 +574,8 @@ export default function MockData() {
             <li className="rounded-lg border border-border bg-muted/30 p-4">
               <h3 className="text-sm font-semibold text-foreground">Local migration seeds</h3>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Fill freshly migrated tables with hundreds of plausible rows so indexes, constraints,
-                and joins are exercised before staging.
+                Fill freshly migrated tables with hundreds of plausible rows so indexes,
+                constraints, and joins are exercised before staging.
               </p>
             </li>
             <li className="rounded-lg border border-border bg-muted/30 p-4">
@@ -620,14 +616,14 @@ export default function MockData() {
             <div>
               <h3 className="font-mono text-sm font-semibold text-foreground">SQL</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Output is emitted as one <code className="font-mono">INSERT INTO</code> statement per
-                row, which is the safest form to paste into a migration or psql session. To seed
+                Output is emitted as one <code className="font-mono">INSERT INTO</code> statement
+                per row, which is the safest form to paste into a migration or psql session. To seed
                 faster, wrap the batch in a single transaction. Dialect notes: PostgreSQL prefers
-                double-quoted identifiers and supports{" "}
-                <code className="font-mono">RETURNING</code>; MySQL uses backticks and{" "}
-                <code className="font-mono">INSERT IGNORE</code>. When tables have foreign keys,
-                insert parents first, or generate the child rows with IDs you already know exist —
-                never disable constraint checks on a shared staging database.
+                double-quoted identifiers and supports <code className="font-mono">RETURNING</code>;
+                MySQL uses backticks and <code className="font-mono">INSERT IGNORE</code>. When
+                tables have foreign keys, insert parents first, or generate the child rows with IDs
+                you already know exist — never disable constraint checks on a shared staging
+                database.
               </p>
             </div>
 
@@ -658,8 +654,8 @@ export default function MockData() {
                 Localized names
               </p>
               <p className="mt-2 font-mono text-xs leading-relaxed text-foreground">
-                30 South Indian employee records with full_name, official_email on the
-                acme.co domain, and a Hyderabad postal address including a 6-digit pincode.
+                30 South Indian employee records with full_name, official_email on the acme.co
+                domain, and a Hyderabad postal address including a 6-digit pincode.
               </p>
             </li>
             <li className="rounded-lg border border-border bg-muted/30 p-4">
