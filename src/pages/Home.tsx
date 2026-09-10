@@ -31,15 +31,15 @@ export default function Home() {
   }, [query]);
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="mx-auto w-full max-w-7xl px-6 py-8">
       <section className="border-b border-border pb-10">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
           <Sparkles className="size-3" /> No signup, no tracking walls
         </span>
-        <h1 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+        <h1 className="mt-4 max-w-4xl text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
           Free, Open Developer Utilities — Zero Signup, Instant Access
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+        <p className="mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg">
           A fast, minimal hub of everyday engineering tools. Everything runs in the browser and
           stays free, forever.
         </p>
@@ -49,7 +49,7 @@ export default function Home() {
         <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Directory
         </h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-4 grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {results.map((tool) =>
             tool.path ? (
               <article key={tool.name} className="group">

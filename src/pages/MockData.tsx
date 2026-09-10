@@ -332,7 +332,7 @@ export default function MockData() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="mx-auto w-full max-w-7xl px-6 py-8">
       <header className="border-b border-border pb-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Generators
