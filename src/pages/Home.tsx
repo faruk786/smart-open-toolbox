@@ -45,10 +45,10 @@ export default function Home() {
         </p>
       </section>
 
-      <div className="w-full border-b border-border/50 my-8 sm:my-10" />
+      <div className="w-full border-b border-border/80 dark:border-border/60 my-5 sm:my-6" />
 
       <section className="w-full" aria-label="Tool directory">
-        <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-6">
+        <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mt-0 mb-4">
           Directory
         </h2>
         <div className="mt-4 grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
