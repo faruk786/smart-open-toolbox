@@ -36,10 +36,11 @@ export default function Home() {
         <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
           <Sparkles className="size-3" /> No signup, no tracking walls
         </span>
-        <h1 className="mt-4 w-full max-w-none text-3xl font-bold leading-[1.15] tracking-tight text-balance text-foreground sm:text-4xl md:text-5xl lg:text-[3.25rem]">
-          Free, Open Developer Utilities — Zero Signup, Instant Access
+        <h1 className="mt-4 w-full max-w-none text-3xl font-semibold leading-tight tracking-tight text-balance text-foreground lg:text-4xl">
+          Free, Open Developer Utilities — Zero Signup,
+          <br className="hidden sm:block" /> Instant Access
         </h1>
-        <p className="mt-3 w-full max-w-none whitespace-normal text-sm leading-relaxed text-muted-foreground sm:text-base md:text-lg xl:whitespace-nowrap">
+        <p className="mt-3 w-full max-w-none text-base leading-relaxed text-muted-foreground sm:text-lg xl:whitespace-nowrap">
           A fast, minimal hub of everyday engineering tools. Everything runs in the browser and
           stays free, forever.
         </p>
