@@ -39,7 +39,7 @@ export default function Home() {
         <h1 className="mt-4 text-2xl sm:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] font-semibold tracking-tight text-foreground leading-tight text-pretty w-full max-w-none">
           Free, Open Developer Utilities — Zero Signup, Instant Access
         </h1>
-        <p className="mt-3 text-muted-foreground text-sm sm:text-base md:text-lg mt-3 text-pretty w-full max-w-none">
+        <p className="mt-3 text-muted-foreground text-sm sm:text-base md:text-lg text-pretty w-full max-w-none">
           A fast, minimal hub of everyday engineering tools. Everything runs in the browser and
           stays free, forever.
         </p>
