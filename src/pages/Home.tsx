@@ -32,15 +32,14 @@ export default function Home() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      <section className="w-full border-b border-border pb-10">
+      <section className="w-full max-w-none mb-10">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
           <Sparkles className="size-3" /> No signup, no tracking walls
         </span>
-        <h1 className="mt-4 w-full max-w-none text-3xl font-semibold leading-tight tracking-tight text-balance text-foreground lg:text-4xl">
-          Free, Open Developer Utilities — Zero Signup,
-          <br className="hidden sm:block" /> Instant Access
+        <h1 className="mt-4 text-2xl sm:text-3xl md:text-[2rem] lg:text-[2.2rem] xl:text-[2.5rem] font-bold tracking-tight text-foreground leading-tight w-full max-w-none whitespace-normal lg:whitespace-nowrap">
+          Free, Open Developer Utilities — Zero Signup, Instant Access
         </h1>
-        <p className="mt-3 w-full max-w-none text-base leading-relaxed text-muted-foreground sm:text-lg xl:whitespace-nowrap">
+        <p className="mt-3 text-muted-foreground text-sm sm:text-base md:text-lg w-full max-w-none whitespace-normal lg:whitespace-nowrap">
           A fast, minimal hub of everyday engineering tools. Everything runs in the browser and
           stays free, forever.
         </p>
