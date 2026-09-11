@@ -32,8 +32,8 @@ export function AppLayout() {
         <Header />
         <div className="flex">
           <Sidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <main className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
+            <main className="min-w-0 flex-1 overflow-x-hidden w-full max-w-full">
               <Outlet />
             </main>
             <Footer />
