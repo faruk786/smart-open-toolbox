@@ -45,7 +45,7 @@ export default function Home() {
         </p>
       </section>
 
-      <div className="w-full border-b border-border/80 dark:border-border/60 my-5 sm:my-6" />
+      <div className="w-full border-b border-border dark:border-zinc-700/60 my-5 sm:my-6" />
 
       <section className="w-full" aria-label="Tool directory">
         <h2 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mt-0 mb-4">
