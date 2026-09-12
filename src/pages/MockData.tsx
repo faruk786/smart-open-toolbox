@@ -345,9 +345,9 @@ export default function MockData() {
         </p>
       </header>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="mt-8 grid w-full min-w-0 grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Input section */}
-        <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <section className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:justify-between">
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-foreground">Describe the data you need</h2>
@@ -396,7 +396,7 @@ export default function MockData() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="e.g., 20 users with name, email, department, salary, and Hyderabad address"
-            className="mt-4 min-h-[120px] resize-y font-mono text-sm"
+            className="mt-4 min-h-[120px] w-full min-w-0 resize-y font-mono text-sm"
           />
 
           <div className="mt-3 flex w-full flex-wrap gap-2">
@@ -408,7 +408,9 @@ export default function MockData() {
                 size="sm"
                 onClick={() => applyPreset(key)}
                 className={
-                  activeCategory === key && !prompt ? "bg-accent text-accent-foreground" : ""
+                  activeCategory === key && !prompt
+                    ? "max-w-full whitespace-normal bg-accent text-accent-foreground"
+                    : "max-w-full whitespace-normal"
                 }
               >
                 {key === "users" && "Indian User Profiles"}
@@ -457,7 +459,7 @@ export default function MockData() {
         </section>
 
         {/* Output section */}
-        <section className="rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
+        <section className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
           <Tabs
             value={format}
             onValueChange={(value) => setFormat(value as OutputFormat)}
