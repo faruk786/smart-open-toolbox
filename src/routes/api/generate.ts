@@ -32,7 +32,7 @@ function extractJsonArray(text: string): Record<string, unknown>[] {
 
 async function callGemini(apiKey: string, userPrompt: string) {
   const res = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
     {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
@@ -45,15 +45,23 @@ async function callGemini(apiKey: string, userPrompt: string) {
   );
 
   if (!res.ok) {
-    const detail = await res.text();
-    return { ok: false as const, status: res.status, detail };
+    try {
+      const detail = await res.text();
+      return { ok: false as const, status: res.status, detail };
+    } catch (err) {
+      return { ok: false as const, status: res.status, detail: String(err) };
+    }
   }
 
-  const data = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-  };
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-  return { ok: true as const, text };
+  try {
+    const data = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+    return { ok: true as const, text };
+  } catch (err) {
+    return { ok: false as const, status: 502, detail: `Invalid JSON response from Gemini: ${String(err)}` };
+  }
 }
 
 async function callGateway(apiKey: string, userPrompt: string) {
