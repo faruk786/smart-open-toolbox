@@ -112,7 +112,11 @@ export const Route = createFileRoute("/api/generate")({
 
         const userPrompt = `${prompt}\n\nReturn exactly ${rowCount} objects. Every object must share the same keys. Use realistic, varied values.`;
 
-        const geminiKey = userKey || process.env["GEMINI_API_KEY"] || "";
+        const geminiKey =
+          userKey ||
+          process.env["GEMINI_API_KEY"] ||
+          process.env["VITE_GEMINI_API_KEY"] ||
+          "";
         const lovableKey = process.env["LOVABLE_API_KEY"] || "";
 
         let result: Awaited<ReturnType<typeof callGemini>>;
