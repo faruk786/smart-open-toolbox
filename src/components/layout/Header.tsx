@@ -9,7 +9,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="flex h-14 items-center gap-3 px-4 sm:gap-6 sm:px-6">
+      <div className="flex h-14 w-full items-center justify-between gap-2 px-4 sm:gap-6 sm:px-6">
         <Link to="/" className="flex shrink-0 items-center gap-2">
           <SquareTerminal className="size-5 text-foreground" />
           <span className="text-sm font-semibold tracking-tight text-foreground">
@@ -17,7 +17,7 @@ export function Header() {
           </span>
         </Link>
 
-        <div className="relative min-w-0 flex-1 sm:max-w-md">
+        <div className="relative hidden min-w-0 flex-1 sm:block sm:max-w-xs md:max-w-md">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"

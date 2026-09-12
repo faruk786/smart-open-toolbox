@@ -332,7 +332,7 @@ export default function MockData() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-8">
+    <div className="mx-auto w-full max-w-full overflow-x-hidden px-4 py-8 sm:px-6">
       <header className="border-b border-border pb-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Generators
@@ -348,8 +348,8 @@ export default function MockData() {
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Input section */}
         <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
+          <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:justify-between">
+            <div className="min-w-0">
               <h2 className="text-sm font-semibold text-foreground">Describe the data you need</h2>
               <p className="mt-1 text-xs text-muted-foreground">
                 Use everyday language — columns, row count, and style are inferred from your prompt.
@@ -357,7 +357,12 @@ export default function MockData() {
             </div>
             <Dialog open={keyDialogOpen} onOpenChange={setKeyDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2" onClick={openKeyDialog}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="shrink-0 gap-2"
+                  onClick={openKeyDialog}
+                >
                   <KeyRound className="size-4" />
                   {hasCustomKey ? "Key saved" : "Custom key"}
                 </Button>
@@ -394,7 +399,7 @@ export default function MockData() {
             className="mt-4 min-h-[120px] resize-y font-mono text-sm"
           />
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex w-full flex-wrap gap-2">
             {(["users", "orders", "subscriptions"] as Category[]).map((key) => (
               <Button
                 key={key}
@@ -458,15 +463,15 @@ export default function MockData() {
             onValueChange={(value) => setFormat(value as OutputFormat)}
             className="w-full"
           >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <TabsList>
+            <div className="flex w-full flex-wrap items-center justify-between gap-3">
+              <TabsList className="max-w-full">
                 <TabsTrigger value="table">Table</TabsTrigger>
                 <TabsTrigger value="json">JSON</TabsTrigger>
                 <TabsTrigger value="sql">SQL</TabsTrigger>
                 <TabsTrigger value="csv">CSV</TabsTrigger>
               </TabsList>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -499,9 +504,9 @@ export default function MockData() {
             ) : (
               <>
                 <TabsContent value="table" className="mt-4">
-                  <div className="overflow-hidden rounded-lg border border-border">
-                    <div className="max-h-[360px] overflow-auto">
-                      <Table>
+                  <div className="w-full overflow-x-auto rounded-lg border border-border/60">
+                    <div className="max-h-[360px] overflow-y-auto">
+                      <Table className="min-w-[500px] whitespace-nowrap text-left text-sm">
                         <TableHeader className="sticky top-0 z-10 bg-muted">
                           <TableRow>
                             {columns.map((col) => (
