@@ -254,7 +254,7 @@ export default function MockData() {
     }
   }
 
-  async function handleGenerate() {
+ async function handleGenerate() {
     const activePrompt = prompt.trim() || PRESETS[activeCategory];
     const userKey = readStoredKey();
 
@@ -266,46 +266,64 @@ export default function MockData() {
     setLoading(true);
     setError(null);
 
-    try {
-      const systemInstruction = `You are a mock data generator. Return ONLY a valid JSON array containing exactly ${rowCount} realistic records matching this request: "${activePrompt}". Do not wrap in markdown codeblocks. Do not add commentary or explanations.`;
+    // Exact, verified model identifiers
+    const models = [
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash",
+      "gemini-3.1-flash-lite",
+      "gemini-3.8-flash",
+    ];
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash-lite:generateContent?key=${userKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: systemInstruction }] }],
-            generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.1,
-            },
-          }),
+    const systemInstruction = `You are a mock data generator. Return ONLY a valid JSON array containing exactly ${rowCount} realistic records matching: "${activePrompt}". No markdown code blocks, no backticks, no commentary.`;
+
+    let generatedRows = null;
+    let lastErrorMessage = "";
+
+    for (const model of models) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${userKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: systemInstruction }] }],
+              generationConfig: {
+                responseMimeType: "application/json",
+                temperature: 0.1,
+              },
+            }),
+          }
+        );
+
+        const payload = await response.json();
+
+        // If high demand (503) or rate limit (429), try the next model pool
+        if (response.status === 503 || response.status === 429) {
+          lastErrorMessage = payload?.error?.message || `Model ${model} busy, trying next...`;
+          continue;
         }
-      );
 
-      const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload?.error?.message || `Failed on ${model}`);
+        }
 
-      if (!response.ok) {
-        setError(payload?.error?.message ?? "Generation failed from Google API.");
-        return;
+        const rawText = payload?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
+        const cleanJson = rawText.replace(/```json|```/g, "").trim();
+        generatedRows = JSON.parse(cleanJson);
+        break; // Success: exit the loop
+      } catch (err: any) {
+        lastErrorMessage = err.message;
       }
+    }
 
-      const rawText = payload?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
-      const cleanJson = rawText.replace(/```json|```/g, "").trim();
-      const parsedRows = JSON.parse(cleanJson);
+    setLoading(false);
 
-      const next = normalizeRows(parsedRows);
-      if (next.length === 0) {
-        setError("No rows came back. Try describing the data differently.");
-        return;
-      }
-
+    if (generatedRows) {
+      const next = normalizeRows(generatedRows);
       setRows(next);
-    } catch (err: any) {
-      setError(err?.message ?? "Network error. Check your connection and try again.");
-    } finally {
-      setLoading(false);
+    } else {
+      setError(lastErrorMessage || "All models are currently busy. Please try again shortly.");
     }
   }
 
