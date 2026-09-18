@@ -30,7 +30,7 @@ export function AppLayout() {
     <SearchProvider>
       <div className="min-h-dvh w-full max-w-full overflow-x-hidden bg-background text-foreground">
         <Header />
-        <div className="flex w-full max-w-full overflow-x-hidden">
+          <div className="flex min-h-[calc(100vh-3.5rem)] w-full max-w-full overflow-x-hidden">
           <Sidebar />
           <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
             <main className="min-w-0 flex-1 overflow-x-hidden w-full max-w-full">

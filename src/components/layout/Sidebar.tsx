@@ -10,11 +10,11 @@ export function Sidebar() {
 
   return (
     <aside
-      className={cn(
-        "sticky top-14 hidden h-[calc(100dvh-3.5rem)] shrink-0 flex-col border-r border-border bg-sidebar transition-[width] duration-200 lg:flex",
-        collapsed ? "w-16" : "w-64",
-      )}
-    >
+  className={cn(
+    "sticky top-14 hidden self-stretch shrink-0 flex-col border-r border-border bg-sidebar transition-[width] duration-200 lg:flex",
+    collapsed ? "w-16" : "w-64",
+  )}
+>
       <div className="flex items-center justify-between px-3 py-3">
         {!collapsed && (
           <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
