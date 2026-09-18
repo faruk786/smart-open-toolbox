@@ -256,27 +256,54 @@ export default function MockData() {
 
   async function handleGenerate() {
     const activePrompt = prompt.trim() || PRESETS[activeCategory];
+    const userKey = readStoredKey();
+
+    if (!userKey) {
+      setError("Please add your Gemini API key under Custom Key to generate data.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
+
     try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt: activePrompt, rowCount, apiKey: readStoredKey() }),
-      });
-      const payload = (await response.json()) as { rows?: unknown; error?: string };
+      const systemInstruction = `You are a mock data generator. Return ONLY a valid JSON array containing exactly ${rowCount} realistic records matching this request: "${activePrompt}". Do not wrap in markdown codeblocks. Do not add commentary or explanations.`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: systemInstruction }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.1,
+            },
+          }),
+        }
+      );
+
+      const payload = await response.json();
+
       if (!response.ok) {
-        setError(payload.error ?? "Generation failed. Please try again.");
+        setError(payload?.error?.message ?? "Generation failed from Google API.");
         return;
       }
-      const next = normalizeRows(payload.rows);
+
+      const rawText = payload?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
+      const cleanJson = rawText.replace(/```json|```/g, "").trim();
+      const parsedRows = JSON.parse(cleanJson);
+
+      const next = normalizeRows(parsedRows);
       if (next.length === 0) {
         setError("No rows came back. Try describing the data differently.");
         return;
       }
+
       setRows(next);
-    } catch {
-      setError("Network error. Check your connection and try again.");
+    } catch (err: any) {
+      setError(err?.message ?? "Network error. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
