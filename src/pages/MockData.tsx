@@ -270,7 +270,7 @@ export default function MockData() {
       const systemInstruction = `You are a mock data generator. Return ONLY a valid JSON array containing exactly ${rowCount} realistic records matching this request: "${activePrompt}". Do not wrap in markdown codeblocks. Do not add commentary or explanations.`;
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userKey}`,
+        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${userKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
